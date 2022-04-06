@@ -20,6 +20,7 @@ template<typename Iterator>
 bool parse_numbers(Iterator first, Iterator last, std::vector<double>& v)
 {
     #ifndef SHORT
+    #ifndef SHORTEST
     bool r = qi::phrase_parse(first, last,
         (
             double_[push_back(phoenix::ref(v), _1)]
@@ -27,12 +28,21 @@ bool parse_numbers(Iterator first, Iterator last, std::vector<double>& v)
         ), space
     );
     #endif
+    #endif
 
     #ifdef SHORT
     bool r = qi::phrase_parse(first, last,
         (
             double_[push_back(phoenix::ref(v), _1)] % ','
         ), space
+    );
+    #endif
+
+    #ifdef SHORTEST
+    bool r = qi::phrase_parse(first, last,
+        (
+            double_ % ','
+        ), space, v
     );
     #endif
 
