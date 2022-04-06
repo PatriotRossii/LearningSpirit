@@ -19,12 +19,22 @@ using phoenix::push_back;
 template<typename Iterator>
 bool parse_numbers(Iterator first, Iterator last, std::vector<double>& v)
 {
+    #ifndef SHORT
     bool r = qi::phrase_parse(first, last,
         (
             double_[push_back(phoenix::ref(v), _1)]
                 >> *(',' >> double_[push_back(phoenix::ref(v), _1)])
         ), space
     );
+    #endif
+
+    #ifdef SHORT
+    bool r = qi::phrase_parse(first, last,
+        (
+            double_[push_back(phoenix::ref(v), _1)] % ','
+        ), space
+    );
+    #endif
 
     if (first != last) return false;
     return r;
