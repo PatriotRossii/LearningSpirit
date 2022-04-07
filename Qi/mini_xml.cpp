@@ -3,6 +3,7 @@
 #include <boost/phoenix/operator.hpp>
 #include <boost/phoenix/fusion.hpp>
 #include <boost/phoenix/stl.hpp>
+#include <boost/phoenix/object.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/variant/recursive_variant.hpp>
 #include <boost/foreach.hpp>
@@ -144,13 +145,18 @@ struct mini_xml_grammar
     : qi::grammar<Iterator, mini_xml(), qi::locals<std::string>, ascii::space_type>
 {
     mini_xml_grammar()
-        : mini_xml_grammar::base_type(xml)
+        : mini_xml_grammar::base_type(xml, "xml")
     {
         using qi::lit;
         using qi::lexeme;
+        using qi::on_error;
+        using qi::fail;
         using ascii::char_;
         using ascii::string;
         using namespace qi::labels;
+
+        using phoenix::construct;
+        using phoenix::val;
 
         text %= lexeme[+(char_ - '<')];
         node %= xml | text;
@@ -158,21 +164,39 @@ struct mini_xml_grammar
         start_tag %=
                 '<'
             >>  !lit('/')
-            >>  lexeme[+(char_ - '>')]
-            >>  '>'
+            >   lexeme[+(char_ - '>')]
+            >   '>'
         ;
 
         end_tag =
                 "</"
-            >>  lit(_r1)
-            >> '>'
+            >   lit(_r1)
+            >   '>'
         ;
 
         xml %=
                 start_tag[_a = _1]
-            >>  *node
-            >>  end_tag(_a)
+            >   *node
+            >   end_tag(_a)
         ;
+
+        xml.name("xml");
+        node.name("node");
+        text.name("text");
+        start_tag.name("start_tag");
+        end_tag.name("end_tag");
+
+        on_error<fail>
+        (
+            xml,
+            std::cout
+                << val("Error! Expecting ")
+                << _4
+                << val(" here: \"")
+                << construct<std::string>(_3, _2)
+                << val("\"")
+                << std::endl
+        );
     }
 
     qi::rule<Iterator, mini_xml(), qi::locals<std::string>, ascii::space_type> xml;
