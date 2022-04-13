@@ -41,6 +41,16 @@ bool generate_complex(OutputIterator sink, const std::complex<double>& c)
     using boost::spirit::karma::_1;
     using boost::spirit::karma::generate;
 
+    #ifdef EASIER
+    using boost::spirit::karma::omit;
+    return generate(sink,
+        (
+            !double_(0.0) << '(' << double_ << ", " << double_ << ')'
+        |   omit[double_] << double_ << omit[double_]
+        ),
+        c.imag(), c.real(), c.imag()
+    );
+    #else
     return generate(sink,
         (
             eps(c.imag() != 0) <<
@@ -48,6 +58,7 @@ bool generate_complex(OutputIterator sink, const std::complex<double>& c)
         |   double_[_1 = c.real()]
         )
     );
+    #endif
 }
 
 int main()
