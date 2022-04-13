@@ -3,10 +3,20 @@
 #include <boost/phoenix/core.hpp>
 #include <boost/phoenix/operator.hpp>
 #include <boost/fusion/include/std_pair.hpp>
+#include <boost/fusion/include/adapt_adt.hpp>
+#include <boost/spirit/include/support_adapt_adt_attributes.hpp>
 
 #include <iostream>
 #include <string>
 #include <complex>
+
+// We can leave off the setters as Karma does not need them
+BOOST_FUSION_ADAPT_ADT(
+    std::complex<double>,
+    (bool, bool, obj.imag() != 0, /**/)
+    (double, double, obj.real(), /**/)
+    (double, double, obj.imag(), /**/)
+)
 
 template <typename Iterator>
 bool parse_complex(Iterator first, Iterator last, std::complex<double>& c)
@@ -41,7 +51,7 @@ bool generate_complex(OutputIterator sink, const std::complex<double>& c)
     using boost::spirit::karma::_1;
     using boost::spirit::karma::generate;
 
-    #ifdef EASIER
+    #if defined EASIER
     using boost::spirit::karma::omit;
     return generate(sink,
         (
@@ -49,6 +59,16 @@ bool generate_complex(OutputIterator sink, const std::complex<double>& c)
         |   omit[double_] << double_ << omit[double_]
         ),
         c.imag(), c.real(), c.imag()
+    );
+    #elif defined FUSION
+    using boost::spirit::karma::bool_;
+    using boost::spirit::karma::true_;
+    using boost::spirit::karma::omit;
+    return generate(sink,
+        (
+            &true_ << '(' << double_ << ", " << double_ << ')'
+        |   omit[bool_] << double_ << omit[double_]
+        ), c
     );
     #else
     return generate(sink,
